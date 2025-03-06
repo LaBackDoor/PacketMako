@@ -1,0 +1,12 @@
+/data
+*.pt
+*.bin
+*.pcap
+*.pcapng
+*.txt
+/.idea
+*.zip
+*.json
+
+# Except requirements.txt
+!requirements.txt
