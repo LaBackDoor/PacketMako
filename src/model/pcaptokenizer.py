@@ -16,23 +16,23 @@ class PCAPTokenizer:
             vocab_size: Size of the token vocabulary (default 260 as per paper)
         """
         self.vocab_size = vocab_size
+        self.offset = offset
 
-
-        # Reserve first 256 tokens for byte values (0x00-0xFF)
+        # Reserve first 256 tokens for byte values (0x00-0xFF), but apply offset
         self.special_tokens = {
-            'packet_start': 0x100,  # 256
-            'end': 0x101,  # 257
+            'packet_start': 0x100 + offset,  # Now 259 instead of 256
+            'end': 0x101 + offset,  # Now 260 instead of 257
         }
 
         # Verify we have enough space for special tokens
         if vocab_size < 258:  # 256 hex values + at least 2 special tokens
             raise ValueError(f"Vocab size {vocab_size} is too small. Minimum is 258.")
 
-        # Create a mapping for hex values to token IDs
-        self.hex_to_token = {i: i for i in range(256)}
+        # Create a mapping for hex values to token IDs with offset
+        self.hex_to_token = {i: i + offset for i in range(256)}
 
         # Track allocated tokens
-        self.allocated_tokens = set(range(256))  # Hex values
+        self.allocated_tokens = set(range(offset, 256 + offset))  # Hex values with offset
         self.allocated_tokens.update(self.special_tokens.values())
 
         # Link type token mapping
@@ -65,7 +65,8 @@ class PCAPTokenizer:
             ValueError: If the vocabulary is full
         """
         # Find first available token ID
-        for token_id in range(self.vocab_size):
+        # Start checking from after the byte range
+        for token_id in range(256 + self.offset, self.vocab_size + self.offset):
             if token_id not in self.allocated_tokens:
                 self.allocated_tokens.add(token_id)
                 return token_id
@@ -320,7 +321,7 @@ class PCAPTokenizer:
 
                 # Extract time interval
                 time_tokens = tokens[i:i + 8]
-                time_bytes = bytes([t if t < 256 else 0 for t in time_tokens])
+                time_bytes = bytes([(t - self.offset) if self.offset <= t < (256 + self.offset) else 0 for t in time_tokens])
                 time_interval = struct.unpack('!d', time_bytes)[0]
                 i += 8
 
@@ -330,7 +331,8 @@ class PCAPTokenizer:
                        tokens[i] != self.special_tokens['packet_start'] and
                        tokens[i] != self.special_tokens['end']):
                     # Map token to byte value, for non-hex tokens use 0
-                    byte_value = tokens[i] if tokens[i] < 256 else 0
+                    # Account for offset when converting tokens back to bytes
+                    byte_value = (tokens[i] - self.offset) if self.offset <= tokens[i] < (256 + self.offset) else 0
                     packet_data.append(byte_value)
                     i += 1
 
