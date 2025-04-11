@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModel
@@ -22,7 +24,10 @@ class MultiModalTokenizer:
     def detect_input_type(self, input_data):
         """Determine if input is text or PCAP"""
         if isinstance(input_data, str):
-            return 'text'
+            if input_data.lower().endswith('.pcap') and os.path.isfile(input_data):
+                return 'pcap'
+            else:
+                return 'text'
         elif isinstance(input_data, (bytes, bytearray)) or hasattr(input_data, 'read'):
             # Assume it's a PCAP file or file-like object
             return 'pcap'
