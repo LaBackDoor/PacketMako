@@ -14,7 +14,7 @@ class HybridByT5PCAPTokenizer(ByT5Tokenizer):
             eos_token="</s>",
             unk_token="<unk>",
             pad_token="<pad>",
-            extra_ids=125,
+            extra_ids=0,
             additional_special_tokens=None,
             pcap_vocab_size=260,
             **kwargs,
@@ -25,7 +25,9 @@ class HybridByT5PCAPTokenizer(ByT5Tokenizer):
             "<pcap_end>",  # Marks the end of PCAP data
             "<text_start>",  # Marks the start of text data
             "<text_end>",  # Marks the end of text data
-            "<pcap_attachment>"  # Indicates a PCAP file attachment
+            "<pcap_attachment>",  # Indicates a PCAP file attachment
+            "<packet_start>",  # For packets within PCAP data
+            "<packet_end>"  # For packets within PCAP data
         ]
 
         if additional_special_tokens:
