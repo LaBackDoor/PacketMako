@@ -1,10 +1,13 @@
 import logging
+
+import torch
+
 from multimodaltokenizer import MultiModalTokenizer, MultiModalModel
 
 logging.basicConfig(level=logging.INFO)
 
 # Initialize tokenizer and model
-tokenizer = MultiModalTokenizer()
+tokenizer = MultiModalTokenizer(pcap_vocab_size=300)
 model = MultiModalModel()
 
 # Example with text input
@@ -13,7 +16,7 @@ text_tokens = tokenizer.tokenize(text_input)
 print(f"Text input tokenized to shape: {text_tokens['input_ids'].shape}")
 
 # Example with PCAP input (using a file path)
-pcap_file = "sample.pcap"  # Replace with your PCAP file
+pcap_file = "sample.pcap"
 try:
     pcap_tokens = tokenizer.tokenize(pcap_file)
     print(f"PCAP input tokenized to shape: {pcap_tokens['input_ids'].shape}")

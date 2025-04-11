@@ -2,14 +2,16 @@ import torch
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModel
 
+from src.model.pcaptokenizer import PCAPTokenizer
+
 
 class MultiModalTokenizer:
-    def __init__(self, text_tokenizer_name="bert-base-uncased"):
+    def __init__(self, text_tokenizer_name="bert-base-uncased", pcap_vocab_size=260):
         # Initialize text tokenizer
         self.text_tokenizer = AutoTokenizer.from_pretrained(text_tokenizer_name)
 
         # Initialize PCAP tokenizer
-        self.pcap_tokenizer = PCAPTokenizer(vocab_size=260)
+        self.pcap_tokenizer = PCAPTokenizer(vocab_size=pcap_vocab_size)
 
         # Add special tokens for identifying modality
         self.modality_identifiers = {
