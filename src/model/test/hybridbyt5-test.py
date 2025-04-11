@@ -30,36 +30,78 @@ def create_mock_pcap_file(filename, num_packets=5):
 
 # Helper function to visualize token IDs
 def visualize_token_ids(token_ids, title, save_path=None):
-    """Visualize token IDs with color coding for special tokens."""
+    """Visualize token IDs with color coding and labels for special tokens."""
     plt.figure(figsize=(30, 6))
 
     # Define colors for different token types
     colors = []
     labels = []
+    token_names = []  # New list to store actual token text
 
-    # Add colors based on token types
+    # Create reverse mapping for pcap special tokens
+    rev_pcap_map = {v: k for k, v in tokenizer.pcap_to_byt5_token_map.items()}
+
+    # Add colors and labels based on token types
     for token_id in token_ids:
         if token_id == tokenizer.text_start_token_id:
             colors.append('green')
             labels.append('text_start')
+            token_names.append("<text_start>")
         elif token_id == tokenizer.text_end_token_id:
             colors.append('darkgreen')
             labels.append('text_end')
+            token_names.append("<text_end>")
         elif token_id == tokenizer.pcap_start_token_id:
             colors.append('blue')
             labels.append('pcap_start')
+            token_names.append("<pcap_start>")
         elif token_id == tokenizer.pcap_end_token_id:
             colors.append('darkblue')
             labels.append('pcap_end')
+            token_names.append("<pcap_end>")
         elif token_id == tokenizer.pcap_attachment_token_id:
             colors.append('purple')
             labels.append('pcap_attachment')
+            token_names.append("<pcap_attachment>")
         elif token_id in tokenizer.pcap_to_byt5_token_map.values():
-            colors.append('orange')
-            labels.append('pcap_special')
+            # Get the original PCAP token ID
+            pcap_token_id = rev_pcap_map[token_id]
+
+            # Determine what kind of PCAP token it is
+            if pcap_token_id == tokenizer.pcap_tokenizer.special_tokens['packet_start']:
+                colors.append('orange')
+                labels.append('packet_start')
+                token_names.append("<packet_start>")
+            elif pcap_token_id == tokenizer.pcap_tokenizer.special_tokens['end']:
+                colors.append('darkorange')
+                labels.append('packet_end')
+                token_names.append("<packet_end>")
+            else:
+                # Must be a link type token - find which one
+                for link_type, link_token_id in tokenizer.pcap_tokenizer.link_types.items():
+                    if link_token_id == pcap_token_id:
+                        colors.append('yellow')
+                        labels.append(f'link_type_{link_type}')
+                        token_names.append(f"<link_type_{link_type}>")
+                        break
+                else:
+                    # If we didn't find a match
+                    colors.append('orange')
+                    labels.append('pcap_special')
+                    token_names.append("unknown_pcap_special")
         else:
             colors.append('lightgray')
             labels.append(str(token_id))
+
+            # Try to decode regular tokens (bytes)
+            if tokenizer.offset <= token_id < tokenizer.offset + 256:
+                byte_val = token_id - tokenizer.offset
+                if 32 <= byte_val <= 126:  # Printable ASCII
+                    token_names.append(f"'{chr(byte_val)}'")
+                else:
+                    token_names.append(f"byte_{byte_val}")
+            else:
+                token_names.append(str(token_id))
 
     # Create bar plot of token IDs
     plt.bar(range(len(token_ids)), token_ids, color=colors)
@@ -68,16 +110,21 @@ def visualize_token_ids(token_ids, title, save_path=None):
     for i, v in enumerate(token_ids):
         plt.text(i, v + 5, str(v), ha='center', fontsize=8)
 
-    # Add labels below for special tokens only
-    for i, label in enumerate(labels):
-        if label not in ['text_start', 'text_end', 'pcap_start', 'pcap_end', 'pcap_attachment', 'pcap_special']:
-            continue
-        plt.text(i, -20, label, ha='center', rotation=90, fontsize=8)
+    # Add labels below bars (not just for special tokens)
+    for i, (label, name) in enumerate(zip(labels, token_names)):
+        if label in ['text_start', 'text_end', 'pcap_start', 'pcap_end',
+                     'pcap_attachment', 'packet_start', 'packet_end'] or label.startswith('link_type_'):
+            plt.text(i, -20, name, ha='center', rotation=90, fontsize=8)
 
     plt.title(title)
     plt.xlabel('Token Position')
     plt.ylabel('Token ID')
     plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+    # Print the first few tokens with their IDs and names
+    print("\nFirst 20 tokens with names:")
+    for i, (tid, name) in enumerate(zip(token_ids[:20], token_names[:20])):
+        print(f"Position {i}: ID {tid} = {name}")
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
