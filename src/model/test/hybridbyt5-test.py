@@ -31,7 +31,7 @@ def create_mock_pcap_file(filename, num_packets=5):
 # Helper function to visualize token IDs
 def visualize_token_ids(token_ids, title, save_path=None):
     """Visualize token IDs with color coding for special tokens."""
-    plt.figure(figsize=(15, 6))
+    plt.figure(figsize=(30, 6))
 
     # Define colors for different token types
     colors = []
@@ -180,7 +180,7 @@ def run_test_cases():
         all_tokens = text_with_pcap_tokens  # Use one of the more complex examples
 
         # Create a histogram of token IDs
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(30, 6))
         plt.hist(all_tokens, bins=50, alpha=0.7, color='blue')
         plt.title('Distribution of Token IDs')
         plt.xlabel('Token ID')
@@ -241,7 +241,7 @@ def test_with_real_pcap(pcap_file_path, sample_text="Analyzing network traffic:"
                         save_path="real_pcap_sample.png")
 
     # Create a full token distribution chart
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(30, 6))
     plt.hist(tokens, bins=100, alpha=0.7, color='green')
     plt.title(f'Token Distribution for {os.path.basename(pcap_file_path)}')
     plt.xlabel('Token ID')
