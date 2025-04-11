@@ -1,3 +1,5 @@
+from transformers import ByT5Tokenizer
+
 from src.model.pcaptokenizer import PCAPTokenizer
 
 

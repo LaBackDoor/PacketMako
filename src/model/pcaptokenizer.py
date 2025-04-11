@@ -8,7 +8,7 @@ import logging
 
 
 class PCAPTokenizer:
-    def __init__(self, vocab_size=260):
+    def __init__(self, vocab_size=260, offset=3):
         """
         Initialize the PCAP tokenizer based on TrafficGPT approach.
 
@@ -16,6 +16,7 @@ class PCAPTokenizer:
             vocab_size: Size of the token vocabulary (default 260 as per paper)
         """
         self.vocab_size = vocab_size
+
 
         # Reserve first 256 tokens for byte values (0x00-0xFF)
         self.special_tokens = {
