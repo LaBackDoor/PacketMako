@@ -1,15 +1,13 @@
 import os
 import tempfile
-import numpy as np
-import matplotlib.pyplot as plt
-from transformers import ByT5Tokenizer
-from src.model.pcaptokenizer import PCAPTokenizer
-from scapy.all import Ether, IP, TCP, Raw, wrpcap
+import time
 
-# Import your tokenizer class
-from transformers import ByT5Tokenizer
-from src.model.pcaptokenizer import PCAPTokenizer
-from src.model.test.hybridbyt5-test import HybridByT5PCAPTokenizer
+import matplotlib.pyplot as plt
+from scapy.all import Raw, wrpcap
+from scapy.layers.inet import IP, TCP
+from scapy.layers.l2 import Ether
+
+from src.model.hybridbyt5 import HybridByT5PCAPTokenizer
 
 
 # Helper function to create mock PCAP data for testing
