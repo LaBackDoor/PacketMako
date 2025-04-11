@@ -16,7 +16,7 @@ class HybridByT5PCAPTokenizer(ByT5Tokenizer):
             pad_token="<pad>",
             extra_ids=0,
             additional_special_tokens=None,
-            pcap_vocab_size=260,
+            pcap_vocab_size=277,
             **kwargs,
     ):
         # Initialize with special tokens for content boundaries

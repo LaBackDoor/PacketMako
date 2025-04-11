@@ -117,7 +117,7 @@ def run_test_cases():
     # Initialize tokenizer
     print("Initializing HybridByT5PCAPTokenizer...")
     global tokenizer
-    tokenizer = HybridByT5PCAPTokenizer(pcap_vocab_size=300)
+    tokenizer = HybridByT5PCAPTokenizer(pcap_vocab_size=277)
 
     # Test Case 1: Text-only input
     text_sample = "This is a sample text for tokenization testing."

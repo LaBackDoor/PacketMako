@@ -8,7 +8,7 @@ import logging
 
 
 class PCAPTokenizer:
-    def __init__(self, vocab_size=260, offset=3):
+    def __init__(self, vocab_size=277, offset=3):
         """
         Initialize the PCAP tokenizer based on TrafficGPT approach.
 
