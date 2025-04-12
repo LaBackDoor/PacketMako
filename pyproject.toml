@@ -5,7 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "adapters>=1.1.0",
+    "datasets>=3.5.0",
+    "hf-xet>=1.0.3",
     "matplotlib>=3.10.1",
+    "pandas>=2.2.3",
     "scapy>=2.6.1",
-    "transformers>=4.51.2",
+    "torch>=2.6.0",
+    "transformers>=4.47.1",
 ]

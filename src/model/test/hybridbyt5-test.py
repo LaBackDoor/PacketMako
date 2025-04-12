@@ -123,7 +123,7 @@ def visualize_token_ids(token_ids, title, save_path=None):
 
     # Print the first few tokens with their IDs and names
     print("\nFirst 20 tokens with names:")
-    for i, (tid, name) in enumerate(zip(token_ids[:20], token_names[:20])):
+    for i, (tid, name) in enumerate(zip(token_ids[:300], token_names[:300])):
         print(f"Position {i}: ID {tid} = {name}")
 
     if save_path:
