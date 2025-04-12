@@ -1,44 +1,55 @@
+import json
 import os
 
-import pandas as pd
 import torch
-from adapters import AdapterConfig
+from adapters import SeqBnConfig
+from adapters.models.t5 import T5AdapterModel
 from datasets import Dataset
 from transformers import (
-    T5ForConditionalGeneration,
     Trainer,
     TrainingArguments,
 )
 
 from src.model.hybridbyt5 import HybridByT5PCAPTokenizer
 
+# Define data directory
+data_dir = "../../data"
 
-# Load your QA dataset - replace this with your actual dataset loading code
-# Example format: { "pcap_file": "path/to/file.pcap", "question": "What is...", "answer": "The answer is..." }
+
+# Load your QA dataset from JSON files
 def load_pcap_qa_dataset(data_dir):
-    # Replace this with your actual dataset loading logic
-    train_df = pd.read_csv(os.path.join(data_dir, "train.csv"))
-    val_df = pd.read_csv(os.path.join(data_dir, "val.csv"))
+    """Load and parse the QA datasets from JSON files"""
+    try:
+        # Load train data
+        with open(os.path.join(data_dir, "train.json"), 'r') as f:
+            train_data = json.load(f)
 
-    # Convert to HuggingFace Dataset format
-    train_dataset = Dataset.from_pandas(train_df)
-    val_dataset = Dataset.from_pandas(val_df)
+        # Load validation data
+        with open(os.path.join(data_dir, "val.json"), 'r') as f:
+            val_data = json.load(f)
 
-    return {"train": train_dataset, "validation": val_dataset}
+        print(f"Successfully loaded {len(train_data)} training and {len(val_data)} validation examples")
+
+        # Convert to HuggingFace Dataset format
+        train_dataset = Dataset.from_list(train_data)
+        val_dataset = Dataset.from_list(val_data)
+
+        return {"train": train_dataset, "validation": val_dataset}
+    except Exception as e:
+        print(f"Error loading dataset from {data_dir}: {e}")
+        raise
 
 
 # Initialize the custom tokenizer and model
 tokenizer = HybridByT5PCAPTokenizer(pcap_vocab_size=277)
-model = T5ForConditionalGeneration.from_pretrained("google/byt5-small")
+model = T5AdapterModel.from_pretrained("google/byt5-small")
 
 # Add PCAP-specific adapters
-adapter_config = AdapterConfig(
-    reduction_factor=16,  # Controls adapter size (higher = smaller)
+adapter_config = SeqBnConfig(
+    reduction_factor=16,
     non_linearity="relu",
     adapter_residual_before_ln=True
 )
-
-AdapterConfig()
 
 # Add adapters to all encoder and decoder layers
 model.add_adapter("pcap_adapter", config=adapter_config)
@@ -50,19 +61,23 @@ def preprocess_function(examples):
     inputs = []
     targets = []
 
-    for question, pcap_file, answer in zip(examples['question'], examples['pcap_file'], examples['answer']):
-        # Create input format: question + PCAP
-        # For PCAP files, we use the tokenizer's special method to handle mixed content
-        if os.path.exists(pcap_file):
-            # Text with PCAP attachment
-            encoded_input = tokenizer.tokenize_text_with_pcap(f"Question: {question}", pcap_file)
-            inputs.append(encoded_input)
-        else:
-            # Fallback to text-only if PCAP file not found
-            encoded_input = tokenizer.encode_mixed_input(text=f"Question: {question} (PCAP unavailable)")
-            inputs.append(encoded_input)
+    for item in examples:
+        question = item['question']
+        pcap_content = item['pcap']  # This could be hex content or a file path
+        answer = item['answer']
 
-        # Target is just the text answer
+        # Check if pcap_content is a file path or inline content
+        if os.path.exists(pcap_content):
+            # Text with PCAP file
+            encoded_input = tokenizer.tokenize_text_with_pcap(f"Question: {question}", pcap_content)
+        else:
+            # Inline PCAP content (hex format)
+            encoded_input = tokenizer.encode_mixed_input(
+                text=f"Question: {question}",
+                pcap_hex=pcap_content
+            )
+
+        inputs.append(encoded_input)
         targets.append(answer)
 
     # Tokenize inputs (already tokenized) and targets
@@ -108,11 +123,16 @@ def data_collator(features):
 
 
 # Load your dataset
-data_dir = "./data"  # Replace with your data directory
 dataset = load_pcap_qa_dataset(data_dir)
 
 # Preprocess the dataset
-tokenized_dataset = dataset.map(preprocess_function, batched=True, remove_columns=dataset["train"].column_names)
+tokenized_dataset = {
+    split: dataset[split].map(
+        lambda examples: preprocess_function([examples]),
+        batched=False  # Process one example at a time
+    )
+    for split in dataset
+}
 
 # Training arguments for Phase 1 (adapter training)
 phase1_args = TrainingArguments(
@@ -149,8 +169,8 @@ phase1_trainer.save_model("./results/phase1_final")
 # Phase 2: Full model fine-tuning
 print("Starting Phase 2: Full Model Fine-tuning")
 
-# Load the adapter-trained model
-model = T5ForConditionalGeneration.from_pretrained("./results/phase1_final")
+# Load the adapter-trained model - IMPORTANT: use T5AdapterModel here too, not T5ForConditionalGeneration
+model = T5AdapterModel.from_pretrained("./results/phase1_final")
 
 # Unfreeze all parameters
 for param in model.parameters():
@@ -193,10 +213,20 @@ eval_results = phase2_trainer.evaluate()
 print(f"Evaluation results: {eval_results}")
 
 
-# Example inference
-def process_pcap_query(question, pcap_file):
-    # Tokenize the input
-    input_ids = tokenizer.tokenize_text_with_pcap(f"Question: {question}", pcap_file)
+# Example inference function
+def process_pcap_query(question, pcap_file_or_content):
+    """Process a query with either a PCAP file path or inline content"""
+    # Check if input is a file path or inline content
+    if os.path.exists(pcap_file_or_content):
+        # Tokenize from file
+        input_ids = tokenizer.tokenize_text_with_pcap(f"Question: {question}", pcap_file_or_content)
+    else:
+        # Tokenize from inline content
+        input_ids = tokenizer.encode_mixed_input(
+            text=f"Question: {question}",
+            pcap_hex=pcap_file_or_content
+        )
+
     input_ids = torch.tensor([input_ids])
 
     # Generate the answer
@@ -211,6 +241,7 @@ def process_pcap_query(question, pcap_file):
 print("Example inference:")
 example_question = "What protocol is used in this capture?"
 example_pcap = "./data/example.pcap"  # Replace with an actual PCAP file
+
 if os.path.exists(example_pcap):
     answer = process_pcap_query(example_question, example_pcap)
     print(f"Q: {example_question}")
