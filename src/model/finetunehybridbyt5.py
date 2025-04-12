@@ -1,7 +1,7 @@
 import json
 import os
-
 import torch
+import pandas as pd
 from adapters import SeqBnConfig
 from adapters.models.t5 import T5AdapterModel
 from datasets import Dataset
@@ -13,7 +13,7 @@ from transformers import (
 from src.model.hybridbyt5 import HybridByT5PCAPTokenizer
 
 # Define data directory
-data_dir = "../../data"
+data_dir = "./data"  # Replace with your data directory
 
 
 # Load your QA dataset from JSON files
