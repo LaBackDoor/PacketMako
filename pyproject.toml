@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "adapters>=1.1.0",
+    "dataset>=1.6.2",
     "datasets>=3.5.0",
     "hf-xet>=1.0.3",
     "matplotlib>=3.10.1",
