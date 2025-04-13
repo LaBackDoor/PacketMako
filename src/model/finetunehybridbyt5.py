@@ -21,11 +21,11 @@ def load_pcap_qa_dataset(data_dir):
     """Load and parse the QA datasets from JSON files"""
     try:
         # Load train data
-        with open(os.path.join(data_dir, "train.json"), 'r') as f:
+        with open("../../data/train.json", 'r') as f:
             train_data = json.load(f)
 
         # Load validation data
-        with open(os.path.join(data_dir, "val.json"), 'r') as f:
+        with open("../../data/test.json", 'r') as f:
             val_data = json.load(f)
 
         print(f"Successfully loaded {len(train_data)} training and {len(val_data)} validation examples")
@@ -73,8 +73,8 @@ def preprocess_function(examples):
         else:
             # Inline PCAP content (hex format)
             encoded_input = tokenizer.encode_mixed_input(
-                text=f"Question: {question}",
-                pcap_hex=pcap_content
+                text = f"Question: {question}",
+                pcap_bytes=pcap_content
             )
 
         inputs.append(encoded_input)
