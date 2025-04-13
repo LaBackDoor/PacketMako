@@ -1,3 +1,4 @@
+import binascii
 import json
 import os
 import torch
@@ -74,7 +75,7 @@ def preprocess_function(examples):
             # Inline PCAP content (hex format)
             encoded_input = tokenizer.encode_mixed_input(
                 text = f"Question: {question}",
-                pcap_bytes=pcap_content
+                pcap_bytes=binascii.unhexlify(pcap_content)
             )
 
         inputs.append(encoded_input)
@@ -224,7 +225,7 @@ def process_pcap_query(question, pcap_file_or_content):
         # Tokenize from inline content
         input_ids = tokenizer.encode_mixed_input(
             text=f"Question: {question}",
-            pcap_hex=pcap_file_or_content
+            pcap_bytes=binascii.unhexlify(pcap_file_or_content)
         )
 
     input_ids = torch.tensor([input_ids])
