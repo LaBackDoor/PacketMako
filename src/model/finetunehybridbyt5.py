@@ -93,29 +93,38 @@ def preprocess_function(examples):
 
 # Custom data collator to handle varying length inputs
 def data_collator(features):
-    # Determine max length in this batch
+    # Get max length from all features in batch
     max_length = max([len(feature["input_ids"]) for feature in features])
 
-    # Create padded batch
+    # Prepare batch containers
     batch = {
         "input_ids": [],
         "attention_mask": [],
         "labels": []
     }
 
+    # Process each feature
     for feature in features:
-        # Pad input_ids
-        padded_inputs = feature["input_ids"] + [tokenizer.pad_token_id] * (max_length - len(feature["input_ids"]))
+        # Pad input_ids to max_length
+        input_length = len(feature["input_ids"])
+        padded_inputs = feature["input_ids"] + [tokenizer.pad_token_id] * (max_length - input_length)
         batch["input_ids"].append(padded_inputs)
 
-        # Create attention mask
-        attention_mask = [1] * len(feature["input_ids"]) + [0] * (max_length - len(feature["input_ids"]))
+        # Create appropriate attention mask
+        attention_mask = [1] * input_length + [0] * (max_length - input_length)
         batch["attention_mask"].append(attention_mask)
 
-        # Copy labels
-        batch["labels"].append(feature["labels"])
+        # Process labels - ensure consistent length across batch
+        # Handle labels differently - they may need fixed padding
+        if isinstance(feature["labels"], list):
+            # Use fixed length for labels (100) to match preprocessing
+            padded_labels = feature["labels"][:100] if len(feature["labels"]) > 100 else feature["labels"] + [-100] * (
+                        100 - len(feature["labels"]))
+            batch["labels"].append(padded_labels)
+        else:
+            batch["labels"].append(feature["labels"])
 
-    # Convert to tensors
+    # Convert all to tensors with consistent shapes
     batch["input_ids"] = torch.tensor(batch["input_ids"], dtype=torch.long)
     batch["attention_mask"] = torch.tensor(batch["attention_mask"], dtype=torch.long)
     batch["labels"] = torch.tensor(batch["labels"], dtype=torch.long)
