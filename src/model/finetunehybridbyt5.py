@@ -1,8 +1,8 @@
 import binascii
 import json
 import os
+
 import torch
-import pandas as pd
 from adapters import SeqBnConfig
 from adapters.models.t5 import T5AdapterModel
 from datasets import Dataset
@@ -12,6 +12,7 @@ from transformers import (
 )
 
 from src.model.hybridbyt5 import HybridByT5PCAPTokenizer
+
 
 def main():
     # Define data directory
@@ -191,7 +192,7 @@ def main():
     # Training arguments for Phase 1 (adapter training)
     phase1_args = TrainingArguments(
         output_dir="./results/phase1",
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         learning_rate=5e-4,  # Higher learning rate for adapter training
         per_device_train_batch_size=4,
         per_device_eval_batch_size=4,
@@ -233,7 +234,7 @@ def main():
     # Training arguments for Phase 2 (full fine-tuning)
     phase2_args = TrainingArguments(
         output_dir="./results/phase2",
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         learning_rate=2e-5,  # Lower learning rate for full fine-tuning
         per_device_train_batch_size=2,
         per_device_eval_batch_size=2,
