@@ -42,10 +42,17 @@ def main():
             print(f"Error loading dataset from {data_dir}: {e}")
             raise
 
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        device = torch.device("cpu")
+        print("WARNING: No GPU available, using CPU")
 
     # Initialize the custom tokenizer and model
     tokenizer = HybridByT5PCAPTokenizer(pcap_vocab_size=277)
     model = T5AdapterModel.from_pretrained("google/byt5-small")
+    model = model.to(device)
 
     # Add PCAP-specific adapters
     adapter_config = SeqBnConfig(
@@ -166,9 +173,9 @@ def main():
         # Create batch with error handling
         try:
             batch = {
-                "input_ids": torch.tensor(padded_input_ids, dtype=torch.long),
-                "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
-                "labels": torch.tensor(padded_labels, dtype=torch.long),
+                "input_ids": torch.tensor(padded_input_ids, dtype=torch.long).to(device),
+                "attention_mask": torch.tensor(attention_mask, dtype=torch.long).to(device),
+                "labels": torch.tensor(padded_labels, dtype=torch.long).to(device),
             }
             return batch
         except Exception as e:
@@ -226,7 +233,7 @@ def main():
 
     # Load the adapter-trained model - IMPORTANT: use T5AdapterModel here too, not T5ForConditionalGeneration
     model = T5AdapterModel.from_pretrained("./results/phase1_final")
-
+    model = model.to(device)
     # Unfreeze all parameters
     for param in model.parameters():
         param.requires_grad = True
