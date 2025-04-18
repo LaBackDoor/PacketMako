@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModel
 
-from src.model.pcaptokenizer import PCAPTokenizer
+from src.tokenization.pcap_tokenizer import PCAPTokenizer
 
 
 class MultiModalTokenizer:

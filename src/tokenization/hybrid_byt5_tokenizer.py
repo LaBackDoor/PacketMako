@@ -1,6 +1,8 @@
+import os
+import tempfile
 from transformers import ByT5Tokenizer
 
-from src.model.pcaptokenizer import PCAPTokenizer
+from src.tokenization.pcap_tokenizer import PCAPTokenizer
 
 
 class HybridByT5PCAPTokenizer(ByT5Tokenizer):
@@ -82,14 +84,14 @@ class HybridByT5PCAPTokenizer(ByT5Tokenizer):
         token_ids = []
 
         # Handle text if provided
-        if text:
+        if text is not None:
             token_ids.append(self.text_start_token_id)
             text_tokens = super().encode(text, add_special_tokens=False)
             token_ids.extend(text_tokens)
             token_ids.append(self.text_end_token_id)
 
         # Handle PCAP bytes if provided
-        if pcap_bytes:
+        if pcap_bytes is not None:
             token_ids.append(self.pcap_start_token_id)
             pcap_tokens = self._tokenize_pcap_bytes(pcap_bytes)
             token_ids.extend(pcap_tokens)
@@ -115,7 +117,6 @@ class HybridByT5PCAPTokenizer(ByT5Tokenizer):
             Tokenized representation of the PCAP data
         """
         # Write bytes to a temporary file
-        import tempfile
         with tempfile.NamedTemporaryFile(suffix='.pcap', delete=False) as temp_file:
             temp_file_path = temp_file.name
             temp_file.write(pcap_bytes)
@@ -124,8 +125,6 @@ class HybridByT5PCAPTokenizer(ByT5Tokenizer):
         try:
             tokens = self._tokenize_pcap_file(temp_file_path)
         finally:
-            # Clean up temporary file
-            import os
             os.unlink(temp_file_path)
 
         return tokens
@@ -235,7 +234,25 @@ class HybridByT5PCAPTokenizer(ByT5Tokenizer):
     # Add methods to handle the different input scenarios
     def tokenize_text_with_pcap(self, text, pcap_file_path):
         """Text with a PCAP file attachment"""
-        return self.encode_mixed_input(text=text, pcap_file_path=pcap_file_path)
+        if not os.path.exists(pcap_file_path):
+            raise FileNotFoundError(f"PCAP file not found: {pcap_file_path}")
+
+        token_ids = []
+
+        # Only add text tokens if there is actual text content
+        if text:
+            token_ids.append(self.text_start_token_id)
+            text_tokens = super().encode(text, add_special_tokens=False)
+            token_ids.extend(text_tokens)
+            token_ids.append(self.text_end_token_id)
+
+        # Add PCAP tokens
+        token_ids.append(self.pcap_attachment_token_id)
+        pcap_tokens = self._tokenize_pcap_file(pcap_file_path)
+        token_ids.extend(pcap_tokens)
+        token_ids.append(self.pcap_end_token_id)
+
+        return token_ids
 
     def tokenize_text_followed_by_pcap(self, text, pcap_bytes):
         """Text followed by PCAP bytes"""

@@ -11,7 +11,7 @@ from transformers import (
     TrainingArguments,
 )
 
-from src.model.hybridbyt5 import HybridByT5PCAPTokenizer
+from src.tokenization.hybrid_byt5_tokenizer import HybridByT5PCAPTokenizer
 
 
 def main():
