@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-This script creates a balanced dataset from processed PCAP stream files.
-It identifies all attack categories and types from the filenames of the processed streams,
-then selects approximately 5 examples of each type to create a balanced dataset.
-All files are placed in a flat structure at the same directory level.
-"""
-
 import os
 import random
 import shutil
@@ -14,7 +6,7 @@ from collections import defaultdict
 # Configuration
 PCAP_STREAMS_DIR = "../../../Packet Analysis Data/data_streams/pcap_streams"
 OUTPUT_DIR = "../../../Packet Analysis Data/balanced_dataset"
-EXAMPLES_PER_TYPE = 5
+EXAMPLES_PER_TYPE = 100
 
 
 def parse_labels_from_filename(filename):
